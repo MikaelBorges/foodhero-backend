@@ -149,4 +149,12 @@ module.exports = (app, db) => {
       else res.status(200).json(savedProduct._id);
     });
   });
+
+  app.delete("/product/delete/:productId", async (req, res, next) => {
+    const { productId } = req.params;
+    productModel.findByIdAndDelete(productId, async function (error) {
+      if (error) res.status(500).json({ message: String(error) });
+      else res.json(productId);
+    });
+  });
 };
