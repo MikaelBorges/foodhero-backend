@@ -1,5 +1,4 @@
 require("dotenv").config();
-require("./models/userModel");
 
 const cors = require("cors"),
   express = require("express"),
@@ -43,7 +42,7 @@ app.use(function (req, res, next) {
 });
 
 const productsRoutes = require("./routes/productsRoutes");
-//const userRoutes = require("./routes/userRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 mongoose.Promise = global.Promise;
 
@@ -66,7 +65,7 @@ mongoose
   })
   .then((db) => {
     productsRoutes(app, db);
-    //userRoutes(app, db);
+    userRoutes(app, db);
 
     app.listen(process.env.PORT || 3306, function () {
       console.log("api prête");

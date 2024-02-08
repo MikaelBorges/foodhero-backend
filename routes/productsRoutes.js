@@ -1,4 +1,5 @@
 const productModel = require("../models/productModel");
+const userModel = require("../models/userModel");
 
 module.exports = (app, db) => {
   app.get("/products", async (req, res, next) => {
@@ -47,12 +48,9 @@ module.exports = (app, db) => {
         .skip((page - 1) * pageSize) // Ignorer les éléments sur les pages précédentes
         .limit(pageSize); // Limiter les résultats à la taille de la page
 
-      res.json({ totalProducts, productsRaw });
+      res.status(200).json({ totalProducts, productsRaw });
     } catch (error) {
-      console.error(error);
-      res
-        .status(500)
-        .json({ error: "Erreur lors de la récupération des produits." });
+      res.status(500).json({ message: String(error) });
     }
   });
 
@@ -77,20 +75,50 @@ module.exports = (app, db) => {
     res.json(categories);
   });
 
-  app.get("/product/:id", async (req, res, next) => {
-    const id = req.params.id;
+  app.get("/product/:productId", async (req, res, next) => {
+    const { productId } = req.params;
     try {
-      const populatedProduct = await productModel
-        .findById(id)
-        .populate({ path: "userId", select: "firstname" });
+      const populatedProductRaw = await productModel
+        .findById(productId)
+        .populate("user.id", "firstname");
 
-      if (!populatedProduct) res.status().json({ error: "Produit non trouvé" });
+      if (!populatedProductRaw)
+        res.status(404).json({ message: "Produit non trouvé" });
 
-      res.json(populatedProduct);
+      const populatedProduct = {
+        ...populatedProductRaw._doc,
+        user: populatedProductRaw.user.id,
+      };
+
+      res.status(200).json(populatedProduct);
     } catch (error) {
+      res.status(500).json({ message: String(error) });
+    }
+  });
+
+  app.get("/products/user/:userId", async (req, res, next) => {
+    const page = parseInt(req.query.page) || 1; // Récupère le paramètre de la page, utilise 1 si non défini ou invalide
+    const pageSize = 10; // Nombre d'éléments par page
+    const { userId } = req.params;
+    try {
+      const totalProducts = await productModel.countDocuments({
+        "user.id": userId,
+      });
+
+      const productsRaw = await productModel
+        .find({ "user.id": userId })
+        .skip((page - 1) * pageSize)
+        .limit(pageSize);
+
+      const user = await userModel
+        .findById(userId)
+        .select("-phone -cryptedPassword");
+
       res
-        .status(500)
-        .json({ message: "Erreur lors de la récupération du produit" });
+        .status(200)
+        .json({ totalProducts, productsRaw, firstname: user.firstname });
+    } catch (error) {
+      res.status(500).json({ message: String(error) });
     }
   });
 
@@ -111,13 +139,14 @@ module.exports = (app, db) => {
       location,
       price,
       strCategory: category,
-      userId,
+      user: {
+        id: userId,
+      },
     };
-    console.log("newProductData", newProductData);
     const newProduct = new productModel(newProductData);
-    newProduct.save(async function (err) {
-      if (err) res.json(500);
-      else res.json(200);
+    newProduct.save(async function (error, savedProduct) {
+      if (error) res.status(500).json({ message: String(error) });
+      else res.status(200).json(savedProduct._id);
     });
   });
 };

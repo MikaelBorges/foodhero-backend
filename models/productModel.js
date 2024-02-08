@@ -57,9 +57,11 @@ const ProductSchema = mongoose.Schema({
   price: { type: Number },
   strMealPreview: { type: String },
   location: { type: String },
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Users",
+  user: {
+    id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Users",
+    },
   },
 });
 
