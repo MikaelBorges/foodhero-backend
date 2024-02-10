@@ -12,7 +12,13 @@ module.exports = (app, db) => {
       // Construire le filtre en fonction des paramètres fournis
       const filter = {};
       if (categories) {
-        filter.strCategory = { $in: categories.split(",") }; // Filtrer par plusieurs catégories
+        const categoriesArray = categories.split(",");
+        const glutenFreeFilterWanted = categoriesArray.find(
+          (category) => category === "Gluten free"
+        );
+        if (glutenFreeFilterWanted)
+          filter.strCategory = { $all: categoriesArray };
+        else filter.strCategory = { $in: categoriesArray };
       }
       if (minPrice || maxPrice) {
         filter.price = {};
@@ -110,7 +116,8 @@ module.exports = (app, db) => {
   });
 
   app.post("/product/new", async (req, res, next) => {
-    const { title, location, price, category, userId } = req.query;
+    const { title, location, price, categories, userId } = req.query;
+    const categoriesArray = categories.split(",");
     const allProducts = await productModel.find();
     const sortedProducts = allProducts.sort((a, b) => {
       const idMealA = parseInt(a.idMeal);
@@ -123,7 +130,7 @@ module.exports = (app, db) => {
       strMeal: title,
       location,
       price,
-      strCategory: category,
+      strCategory: categoriesArray,
       user: {
         id: userId,
       },
@@ -148,7 +155,8 @@ module.exports = (app, db) => {
 
   app.put("/product/update/:productId", async (req, res, next) => {
     const { productId } = req.params;
-    const { title, location, price, category } = req.query;
+    const { title, location, price, categories } = req.query;
+    const categoriesArray = categories.split(",");
     try {
       const productFound = await productModel.findById(productId);
       if (productFound) {
@@ -156,14 +164,14 @@ module.exports = (app, db) => {
           strMeal: title,
           price,
           location,
-          strCategory: category,
+          strCategory: categoriesArray,
         });
         const updatedProductFound = await productModel.findById(productId);
         const updatedProduct = {
           title: updatedProductFound.strMeal,
           location: updatedProductFound.location,
           price: updatedProductFound.price,
-          category: updatedProductFound.strCategory,
+          categories: updatedProductFound.strCategory,
         };
         res.status(200).json(updatedProduct);
       } else {

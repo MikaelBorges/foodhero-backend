@@ -4,7 +4,7 @@ const ProductSchema = mongoose.Schema({
   idMeal: { type: String },
   strMeal: { type: String },
   strDrinkAlternate: { type: String, default: null },
-  strCategory: { type: String },
+  strCategory: { type: Array },
   strArea: { type: String },
   strInstructions: { type: String },
   strMealThumb: { type: String },
