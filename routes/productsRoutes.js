@@ -181,4 +181,32 @@ module.exports = (app, db) => {
       res.status(500).json(String(error));
     }
   });
+
+  app.put("/product/updateImages/:productId", async (req, res, next) => {
+    const { productId } = req.params;
+    const { images } = req.body;
+    try {
+      const productFound = await productModel.findById(productId);
+      if (productFound) {
+        await productModel.findByIdAndUpdate(productId, {
+          strMealPreview: images[0],
+          strMealThumb: images,
+        });
+        const updatedProductFound = await productModel.findById(productId);
+        const updatedProduct = {
+          title: updatedProductFound.strMeal,
+          location: updatedProductFound.location,
+          price: updatedProductFound.price,
+          categories: updatedProductFound.strCategory,
+          image: strMealPreview,
+          imageThumb: updatedProductFound.strMealThumb,
+        };
+        res.status(200).json(updatedProduct);
+      } else {
+        res.status(400).json("Annonce non trouvée");
+      }
+    } catch (error) {
+      res.status(500).json(String(error));
+    }
+  });
 };
